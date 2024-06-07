@@ -33,6 +33,10 @@
 #error Unknown Raspberry Pi version (variable RASPI)
 #endif
 
+#if !defined(RASPI)
+#error Unknown Raspberry Pi version (variable RASPI)
+#endif
+
 #if RASPI == 1
 #define PERIPH_VIRT_BASE  0x20000000
 #define PERIPH_PHYS_BASE  0x7E000000
