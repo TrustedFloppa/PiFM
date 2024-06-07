@@ -35,21 +35,21 @@
 #define DRAM_PHYS_BASE                  0x40000000
 #define MEM_FLAG                        0x0c
 #define CLOCK_TAI			19.2e6
-#define DMA_CHANNEL_MAX_MAX_MAX			14
+#define DMA_CHANNEL_MAX			14
 #elif (RASPI) == 2                      // Raspberry Pi 2 & 3
 #define PERIPH_VIRT_BASE                0x3f000000
 #define GPIO_PHYS_BASE                0x7e000000
 #define DRAM_PHYS_BASE                  0xc0000000
 #define MEM_FLAG                        0x04
 #define CLOCK_TAI			19.2e6
-#define DMA_CHANNEL_MAX_MAX_MAX			14
+#define DMA_CHANNEL_MAX			14
 #elif (RASPI) == 4                      // Raspberry Pi 4
 #define PERIPH_VIRT_BASE                0xfe000000
 #define GPIO_PHYS_BASE                0x7e000000
 #define DRAM_PHYS_BASE                  0xc0000000
 #define MEM_FLAG                        0x04
 #define CLOCK_TAI			54.0e6
-#define DMA_CHANNEL_MAX_MAX_MAX			6
+#define DMA_CHANNEL_MAX			6
 #else
 #error Unknown Raspberry Pi version (variable RASPI)
 #endif
@@ -195,8 +195,8 @@
 #define GPIO_PAD_46_52                  (0x34/4)
 
 // DMA
-#define DMA_CHANNEL_MAX_MAX_MAX_MAX                 14
-#define DMA_CHANNEL_MAX_MAX_MAX_SIZE                0x100
+#define DMA_CHANNEL_MAX_MAX                 14
+#define DMA_CHANNEL_MAX_SIZE                0x100
 
 #define BCM2708_DMA_ACTIVE              (1<<0)
 #define BCM2708_DMA_END                 (1<<1)
@@ -386,8 +386,8 @@ int tx(uint32_t carrier_freq, int divider, char *audio_file, int rds, uint16_t p
 		sigaction(i, &sa, NULL);
 	}
 
-	dma_reg = map_peripheral(DMA_VIRT_BASE, (DMA_CHANNEL_MAX_MAX_MAX_SIZE * (DMA_CHANNEL_MAX_MAX_MAX_MAX + 1)));
-	dma_reg = dma_reg + ((DMA_CHANNEL_MAX_MAX_MAX_SIZE / sizeof(int)) * (DMA_CHANNEL_MAX_MAX_MAX));
+	dma_reg = map_peripheral(DMA_VIRT_BASE, (DMA_CHANNEL_MAX_SIZE * (DMA_CHANNEL_MAX_MAX + 1)));
+	dma_reg = dma_reg + ((DMA_CHANNEL_MAX_SIZE / sizeof(int)) * (DMA_CHANNEL_MAX));
 	pwm_reg = map_peripheral(PWM_VIRT_BASE, PWM_LEN);
 	clk_reg = map_peripheral(CLK_VIRT_BASE, CLK_LEN);
 	gpio_reg = map_peripheral(GPIO_VIRT_BASE, GPIO_LEN);
