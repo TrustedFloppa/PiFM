@@ -29,16 +29,29 @@
 
 #define MBFILE                          DEVICE_FILE_NAME // From mailbox.h
 
-#elif (RASPI) == 4                      // Raspberry Pi 4
-#define PERIPH_VIRT_BASE                0xfe000000
-#define PERIPH_PHYS_BASE                0x7e000000
-#define DRAM_PHYS_BASE                  0xc0000000
-#define MEM_FLAG                        0x04
-#define CLOCK_BASE			54.0e6
-#define DMA_CHANNEL			6
-#else
+#if !defined(RASPI)
 #error Unknown Raspberry Pi version (variable RASPI)
 #endif
+
+#if RASPI == 1
+#define PERIPH_VIRT_BASE  0x20000000
+#define PERIPH_PHYS_BASE  0x7E000000
+#define DMA_CHANNEL       14
+#define CLOCK_BASE        500000000
+#elif RASPI == 2 || RASPI == 3
+#define PERIPH_VIRT_BASE  0x3F000000
+#define PERIPH_PHYS_BASE  0x3F000000
+#define DMA_CHANNEL       5
+#define CLOCK_BASE        500000000
+#elif RASPI == 4
+#define PERIPH_VIRT_BASE  0xFE000000
+#define PERIPH_PHYS_BASE  0xFE000000
+#define DMA_CHANNEL       5
+#define CLOCK_BASE        54000000
+#else
+#error Unknown Raspberry Pi version
+#endif
+
 
 #define DMA_BASE_OFFSET                 0x00007000
 #define PWM_BASE_OFFSET                 0x0020C000
