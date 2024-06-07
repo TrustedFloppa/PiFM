@@ -31,25 +31,25 @@
 
 #if (RASPI) == 1                        // Original Raspberry Pi 1
 #define PERIPH_VIRT_BASE                0x20000000
-#define PERIPH_PHYS_BASE                0x7e000000
+#define GPIO_PHYS_BASE                0x7e000000
 #define DRAM_PHYS_BASE                  0x40000000
 #define MEM_FLAG                        0x0c
-#define CLOCK_BASE			19.2e6
-#define DMA_CHANNEL			14
+#define CLOCK_TAI			19.2e6
+#define DMA_CHANNEL_MAX			14
 #elif (RASPI) == 2                      // Raspberry Pi 2 & 3
 #define PERIPH_VIRT_BASE                0x3f000000
-#define PERIPH_PHYS_BASE                0x7e000000
+#define GPIO_PHYS_BASE                0x7e000000
 #define DRAM_PHYS_BASE                  0xc0000000
 #define MEM_FLAG                        0x04
-#define CLOCK_BASE			19.2e6
-#define DMA_CHANNEL			14
+#define CLOCK_TAI			19.2e6
+#define DMA_CHANNEL_MAX			14
 #elif (RASPI) == 4                      // Raspberry Pi 4
 #define PERIPH_VIRT_BASE                0xfe000000
-#define PERIPH_PHYS_BASE                0x7e000000
+#define GPIO_PHYS_BASE                0x7e000000
 #define DRAM_PHYS_BASE                  0xc0000000
 #define MEM_FLAG                        0x04
-#define CLOCK_BASE			54.0e6
-#define DMA_CHANNEL			6
+#define CLOCK_TAI			54.0e6
+#define DMA_CHANNEL_MAX			6
 #else
 #error Unknown Raspberry Pi version (variable RASPI)
 #endif
@@ -73,9 +73,9 @@
 #define PAD_VIRT_BASE                   (PERIPH_VIRT_BASE + PAD_BASE_OFFSET)
 #define PCM_VIRT_BASE                   (PERIPH_VIRT_BASE + PCM_BASE_OFFSET)
 
-#define PWM_PHYS_BASE                   (PERIPH_PHYS_BASE + PWM_BASE_OFFSET)
-#define PCM_PHYS_BASE                   (PERIPH_PHYS_BASE + PCM_BASE_OFFSET)
-#define GPIO_PHYS_BASE                  (PERIPH_PHYS_BASE + GPIO_BASE_OFFSET)
+#define PWM_PHYS_BASE                   (GPIO_PHYS_BASE + PWM_BASE_OFFSET)
+#define PCM_PHYS_BASE                   (GPIO_PHYS_BASE + PCM_BASE_OFFSET)
+#define GPIO_PHYS_BASE                  (GPIO_PHYS_BASE + GPIO_BASE_OFFSET)
 
 // GPIO
 #define GPFSEL0                         (0x00/4)
@@ -195,8 +195,8 @@
 #define GPIO_PAD_46_52                  (0x34/4)
 
 // DMA
-#define DMA_CHANNEL_MAX                 14
-#define DMA_CHANNEL_SIZE                0x100
+#define DMA_CHANNEL_MAX_MAX                 14
+#define DMA_CHANNEL_MAX_SIZE                0x100
 
 #define BCM2708_DMA_ACTIVE              (1<<0)
 #define BCM2708_DMA_END                 (1<<1)
@@ -386,8 +386,8 @@ int tx(uint32_t carrier_freq, int divider, char *audio_file, int rds, uint16_t p
 		sigaction(i, &sa, NULL);
 	}
 
-	dma_reg = map_peripheral(DMA_VIRT_BASE, (DMA_CHANNEL_SIZE * (DMA_CHANNEL_MAX + 1)));
-	dma_reg = dma_reg + ((DMA_CHANNEL_SIZE / sizeof(int)) * (DMA_CHANNEL));
+	dma_reg = map_peripheral(DMA_VIRT_BASE, (DMA_CHANNEL_MAX_SIZE * (DMA_CHANNEL_MAX_MAX + 1)));
+	dma_reg = dma_reg + ((DMA_CHANNEL_MAX_SIZE / sizeof(int)) * (DMA_CHANNEL_MAX));
 	pwm_reg = map_peripheral(PWM_VIRT_BASE, PWM_LEN);
 	clk_reg = map_peripheral(CLK_VIRT_BASE, CLK_LEN);
 	gpio_reg = map_peripheral(GPIO_VIRT_BASE, GPIO_LEN);
@@ -438,7 +438,7 @@ int tx(uint32_t carrier_freq, int divider, char *audio_file, int rds, uint16_t p
 
 
 	// Adjust PLLA frequency
-	freq_ctl = (unsigned int)(((carrier_freq*divider)/CLOCK_BASE*((double)(1<<20))));
+	freq_ctl = (unsigned int)(((carrier_freq*divider)/CLOCK_TAI*((double)(1<<20))));
 	clk_reg[PLLA_CTRL] = (0x5a<<24) | (0x21<<12) | (freq_ctl>>20); // Integer part
 	freq_ctl&=0xFFFFF;
 	clk_reg[PLLA_FRAC] = (0x5a<<24) | (freq_ctl&0xFFFFC); // Fractional part
@@ -487,7 +487,7 @@ int tx(uint32_t carrier_freq, int divider, char *audio_file, int rds, uint16_t p
 		// Write a frequency sample
 		cbp->info = BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP;
 		cbp->src = mem_virt_to_phys(ctl->sample + i);
-		cbp->dst = PERIPH_PHYS_BASE + (PLLA_FRAC<<2) + CLK_BASE_OFFSET;
+		cbp->dst = GPIO_PHYS_BASE + (PLLA_FRAC<<2) + CLK_BASE_OFFSET;
 		cbp->length = 4;
 		cbp->stride = 0;
 		cbp->next = mem_virt_to_phys(cbp + 1);
@@ -495,7 +495,7 @@ int tx(uint32_t carrier_freq, int divider, char *audio_file, int rds, uint16_t p
 		// Delay
 		cbp->info = BCM2708_DMA_NO_WIDE_BURSTS | BCM2708_DMA_WAIT_RESP | BCM2708_DMA_D_DREQ | BCM2708_DMA_PER_MAP(5);
 		cbp->src = mem_virt_to_phys(mbox.virt_addr);
-		cbp->dst = PERIPH_PHYS_BASE + (PWM_FIFO<<2) + PWM_BASE_OFFSET;
+		cbp->dst = GPIO_PHYS_BASE + (PWM_FIFO<<2) + PWM_BASE_OFFSET;
 		cbp->length = 4;
 		cbp->stride = 0;
 		cbp->next = mem_virt_to_phys(cbp + 1);
@@ -590,7 +590,7 @@ int tx(uint32_t carrier_freq, int divider, char *audio_file, int rds, uint16_t p
 
 	printf("Starting to transmit on %3.1f MHz.\n", carrier_freq/1e6);
 
-	double deviation_scale_factor =  0.1 * (divider*(deviation*1000)/(CLOCK_BASE/((double)(1<<20))));
+	double deviation_scale_factor =  0.1 * (divider*(deviation*1000)/(CLOCK_TAI/((double)(1<<20))));
 
 	for (;;) {
 
@@ -820,7 +820,7 @@ int main(int argc, char **argv) {
 
 	alternative_freq[0] = af_size;
 
-	double xtal_freq_recip=1.0/CLOCK_BASE;
+	double xtal_freq_recip=1.0/CLOCK_TAI;
 	int divider, best_divider = 0;
 	int min_int_multiplier, max_int_multiplier;
 	int int_multiplier;
