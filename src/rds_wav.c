@@ -31,9 +31,7 @@
 #include "rds.h"
 #include "fm_mpx.h"
 
-
 #define LENGTH 114000
-
 
 /* Simple test program */
 int main(int argc, char **argv) {
@@ -50,12 +48,15 @@ int main(int argc, char **argv) {
     char *in_file = argv[1];
     if(strcmp("NONE", argv[1]) == 0) in_file = NULL;
 
-    if(fm_mpx_open(in_file, LENGTH) != 0) {
+    int cutoff_freq = 15000;  // Example value
+    int preemphasis_corner_freq = 50;  // Example value
+    int srate = 48000;  // Example value
+    int nochan = 2;  // Example value
+
+    if(fm_mpx_open(in_file, LENGTH, cutoff_freq, preemphasis_corner_freq, srate, nochan) != 0) {
         printf("Could not setup FM mulitplex generator.\n");
         return EXIT_FAILURE;
     }
-
-
 
     // Set the format of the output file
     SNDFILE *outf;
@@ -75,23 +76,27 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    float mpx_buffer[LENGTH];
+    double mpx_buffer[LENGTH];
+    double rds_buffer[LENGTH];  // Adding rds_buffer as required by fm_mpx_get_samples
+    float mpx = 1.0f;  // Example value
+    int rds = 1;  // Example value
+    int wait = 1;  // Example value
 
     for(int j=0; j<40; j++) {
-        if( fm_mpx_get_samples(mpx_buffer) < 0 ) break;
+        if(fm_mpx_get_samples(mpx_buffer, rds_buffer, mpx, rds, wait) < 0) break;
 
         // scale samples
         for(int i=0; i<LENGTH; i++) {
             mpx_buffer[i] /= 10.;
         }
 
-        if(sf_write_float(outf, mpx_buffer, LENGTH) != LENGTH) {
+        if(sf_write_float(outf, (float*)mpx_buffer, LENGTH) != LENGTH) {  // Typecast to float*
             fprintf(stderr, "Error: writing to file %s.\n", argv[1]);
             return EXIT_FAILURE;
         }
     }
 
-    if(sf_close(outf) ) {
+    if(sf_close(outf)) {
         fprintf(stderr, "Error: closing file %s.\n", argv[1]);
     }
 
